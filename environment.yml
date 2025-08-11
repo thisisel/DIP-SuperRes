@@ -1,0 +1,25 @@
+name: super_res_env
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.12
+  - pytorch=2.4.0
+  - torchvision=0.19.0
+  - torchaudio=2.4.0
+  - cudatoolkit=11.8  # Adjust based on GPU's CUDA version (check with nvidia-smi)
+  - numpy=1.26.4
+  - pillow  # For PIL (Python Imaging Library)
+  - rasterio  # For geospatial data handling
+  - matplotlib=3.9.2  # For plotting
+  - pandas=2.2.2  # For data manipulation
+  - pip
+  - pip:
+    - torch-optimizer  # For Adam optimizer (if not in Conda)
+    - torchmetrics  # For lr_scheduler (if needed, adjust version)
+    - ipykernel
+    - jupyterlab=4.2.3  # For remote Jupyter Lab access
+    - tqdm  # Progress bar (assuming tqdmauto was a typo)
+    - copy
+    - tacoReader  # Custom module; may need manual installation if not on PyPI
