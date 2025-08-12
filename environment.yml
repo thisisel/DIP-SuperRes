@@ -19,7 +19,8 @@ dependencies:
     - torch-optimizer  # For Adam optimizer (if not in Conda)
     - torchmetrics  # For lr_scheduler (if needed, adjust version)
     - ipykernel
-    - jupyterlab=4.2.3  # For remote Jupyter Lab access
+    - jupyterlab 
     - tqdm  # Progress bar (assuming tqdmauto was a typo)
-    - copy
-    - tacoReader  # Custom module; may need manual installation if not on PyPI
+    - ipywidgets
+    - tacoreader  
+    - super-image
