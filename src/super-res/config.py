@@ -84,12 +84,24 @@ def setup_environment(env_mode: EnvModeType) -> None:
     if env_mode.startswith("colab"):
         try:
             import super_image  # noqa: F401
+            # import rasterio  # noqa: F401
+            # import tacoreader  # noqa: F401
         except ImportError:
-            print("Installing 'super-image'...")
+            print("Installing external packages...")
             try:
-                subprocess.run(["pip", "install", "--quiet", "super-image"], check=True)
+                subprocess.run(
+                    [
+                        "pip",
+                        "install",
+                        "--quiet",
+                        "super-image",
+                        # "rasterio",
+                        # "tacoreader",
+                    ],
+                    check=True,
+                )
             except subprocess.CalledProcessError as e:
-                raise RuntimeError(f"Failed to install super-image: {e}")
+                raise RuntimeError(f"Failed to install package: {e}")
 
         try:
             from google.colab import drive
@@ -135,6 +147,7 @@ def create_config(env_mode: EnvModeType | None = None) -> Config:
     config = Config(env_mode=env_mode)
     config.validate()
     return config
+
 
 if __name__ == "__main__":
     config = create_config()
