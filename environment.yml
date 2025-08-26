@@ -8,19 +8,19 @@ dependencies:
   - pytorch=2.4.0
   - torchvision=0.19.0
   - torchaudio=2.4.0
-  - cudatoolkit=11.8  # Adjust based on GPU's CUDA version (check with nvidia-smi)
+  - cudatoolkit=11.8  
   - numpy=1.26.4
-  - pillow  # For PIL (Python Imaging Library)
+  - pillow  
   - rasterio  # For geospatial data handling
-  - matplotlib=3.9.2  # For plotting
-  - pandas=2.2.2  # For data manipulation
+  - matplotlib=3.9.2 
+  - pandas=2.2.2  
   - pip
   - pip:
-    - torch-optimizer  # For Adam optimizer (if not in Conda)
-    - torchmetrics  # For lr_scheduler (if needed, adjust version)
+    - torch-optimizer  # For Adam optimizer 
+    - torchmetrics  # For lr_scheduler 
     - ipykernel
     - jupyterlab 
-    - tqdm  # Progress bar (assuming tqdmauto was a typo)
+    - tqdm  
     - ipywidgets
     - tacoreader  
     - super-image
