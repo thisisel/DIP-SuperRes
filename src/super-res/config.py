@@ -1,156 +1,103 @@
 import os
-import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Literal
+from typing import List, Literal, Optional
 
-EnvModeType = Literal["colab", "colab-vm", "remote", "local"]
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    pass
+
+EnvModeType = Literal["colab", "remote", "local"]
 
 
 @dataclass(frozen=True)
 class Config:
     env_mode: EnvModeType
-    selected_subsets: List[str] = field(
-        default_factory=lambda: ["SUDOUE-4", "SUDOUE-4", "SUDOUE-4"]
-    )
+    # Optional override fields for user-defined paths
+    model_16_block_ckpt_override: Optional[Path] = field(default=None)
+    model_8_block_ckpt_override: Optional[Path] = field(default=None)
 
     # Derived fields (init=False)
     data_root: Path = field(init=False)
     base_dir: Path = field(init=False)
-    taco_raw_dir: Path = field(init=False)
-    taco_file_paths: List[Path] = field(init=False)
-    normalized_sets_dir: Path = field(init=False)
     finetune_dir: Path = field(init=False)
-    train_dir: Path = field(init=False)
-    val_dir: Path = field(init=False)
-    test_dir: Path = field(init=False)
+
+    # --- Final checkpoint paths that the inference script will use ---
+    model_16_block_ckpt: Path = field(init=False)
+    model_8_block_ckpt: Path = field(init=False)
 
     def __post_init__(self) -> None:
-        # Set data_root based on env_mode (defaults; override in factory if needed)
         data_root_map = {
             "local": Path("/mnt/shared"),
             "remote": Path.home(),
             "colab": Path("/content/drive/MyDrive"),
-            "colab-vm": Path("/content/MyDrive"),  # only normalized sets are in vm
+            "colab-vm": Path("/content/MyDrive"),
         }
         object.__setattr__(
             self, "data_root", data_root_map.get(self.env_mode, Path.cwd())
         )
-
-        # Derive other paths
         object.__setattr__(self, "base_dir", self.data_root / "datasets/sen2venus")
-        # object.__setattr__(self, "taco_raw_dir", self.base_dir / "TACO_raw_data")
-        # object.__setattr__(
-        #     self,
-        #     "taco_file_paths",
-        #     [self.taco_raw_dir / f"{subset}.taco" for subset in self.selected_subsets],
-        # )
-        normalized_sets_dir_map = {
-            "local": self.base_dir / "normalized_sets",
-            "remote": self.base_dir / "normalized_sets",
-            "colab": self.base_dir / "normalized_sets",
-            "colab-vm": Path("/content/normalized_sets"),
-        }
-        object.__setattr__(
-            self,
-            "normalized_sets_dir",
-            normalized_sets_dir_map.get(
-                self.env_mode, self.base_dir / "normalized_sets"
-            ),
-        )
         object.__setattr__(self, "finetune_dir", self.base_dir / "finetune")
-        object.__setattr__(self, "train_dir", self.normalized_sets_dir / "train")
-        object.__setattr__(self, "val_dir", self.normalized_sets_dir / "val")
-        object.__setattr__(self, "test_dir", self.normalized_sets_dir / "test")
+
+        # Logic to prioritize .env paths over defaults
+        # For 16-block model
+        if self.model_16_block_ckpt_override:
+            object.__setattr__(
+                self, "model_16_block_ckpt", self.model_16_block_ckpt_override
+            )
+        else:
+            default_path_16 = (
+                self.finetune_dir / "edsr_base" / "best_model_checkpoint.pt"
+            )
+            object.__setattr__(self, "model_16_block_ckpt", default_path_16)
+
+        # For 8-block model
+        if self.model_8_block_ckpt_override:
+            object.__setattr__(
+                self, "model_8_block_ckpt", self.model_8_block_ckpt_override
+            )
+        else:
+            default_path_8 = (
+                self.finetune_dir / "edsr_base_8_block" / "best_model_checkpoint.pt"
+            )
+            object.__setattr__(self, "model_8_block_ckpt", default_path_8)
 
     def validate(self) -> None:
         """Validate config paths exist; raise errors otherwise."""
-        missing_paths = []
-        for attr in [
-            "data_root",
-            "base_dir",
-            # "taco_raw_dir",
-            "normalized_sets_dir",
-            "finetune_dir",
-            "train_dir",
-            "val_dir",
-            "test_dir",
-        ]:
-            path: Path = getattr(self, attr)
-            if not path.exists():
-                missing_paths.append(str(path))
-        if missing_paths:
-            raise ValueError(f"Missing paths: {', '.join(missing_paths)}")
-        # for file_path in self.taco_file_paths:
-        #     if not file_path.exists():
-        #         missing_paths.append(str(file_path))
-        if missing_paths:
-            raise ValueError(f"Missing taco files: {', '.join(missing_paths)}")
+        paths_to_check = {
+            "data_root": self.data_root,
+            "base_dir": self.base_dir,
+            "16-block checkpoint": self.model_16_block_ckpt,
+            "8-block checkpoint": self.model_8_block_ckpt,
+        }
+        missing = [
+            f"{name} ({path})"
+            for name, path in paths_to_check.items()
+            if not path.exists()
+        ]
+        if missing:
+            raise FileNotFoundError(
+                f"Missing required paths/files: {', '.join(missing)}"
+            )
 
 
 def setup_environment(env_mode: EnvModeType) -> None:
-    """Perform environment-specific setup (side effects isolated here)."""
+    """Perform environment-specific setup."""
     if env_mode.startswith("colab"):
+        packages = ["super-image", "python-dotenv"]
         try:
-            import super_image  # noqa: F401
-            # import rasterio  # noqa: F401
-            # import tacoreader  # noqa: F401
+            for package in packages:
+                __import__(package)
         except ImportError:
             print("Installing external packages...")
-            try:
-                subprocess.run(
-                    [
-                        "pip",
-                        "install",
-                        "--quiet",
-                        "super-image",
-                        # "rasterio",
-                        # "tacoreader",
-                    ],
-                    check=True,
-                )
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(f"Failed to install package: {e}")
+            subprocess.run(["pip", "install", "--quiet"] + packages, check=True)
 
-        try:
-            from google.colab import drive
+        from google.colab import drive
 
-            drive.mount("/content/drive", force_remount=True)
-        except ImportError:
-            raise RuntimeError("Google Colab module not found. Are you in Colab?")
-        except Exception as e:
-            raise RuntimeError(f"Failed to mount Google Drive: {e}")
-
-        try:
-            print("Fetching IP info...")
-            result = subprocess.run(
-                ["curl", "ipinfo.io"], capture_output=True, text=True, check=True
-            )
-            print(f"IP Info: {result.stdout}")
-        except subprocess.CalledProcessError as e:
-            print(f"Warning: Failed to fetch IP info: {e}")
-
-        # Optional: Copy data to local /content for faster I/O in Colab
-        if env_mode.endswith("vm"):
-            colab_vm_dir = Path("/content/taco_normalized")
-            if not colab_vm_dir.exists():
-                print(
-                    "Copying normalized data to local Colab storage for performance..."
-                )
-                shutil.copytree(
-                    Path("/content/drive/MyDrive/datasets/sen2venus/normalized_sets"),
-                    colab_vm_dir,
-                )
-                print("Copy complete.")
-            # Avoid os.chdir; let users handle working dir if needed
-
-    elif env_mode == "remote":
-        print("Remote environment detected. No specific setup needed.")
-
-    elif env_mode == "local":
-        print("Local environment detected. Ensuring dependencies...")
+        drive.mount("/content/drive", force_remount=True)
 
 
 def create_config(env_mode: EnvModeType | None = None) -> Config:
@@ -158,17 +105,26 @@ def create_config(env_mode: EnvModeType | None = None) -> Config:
     if env_mode is None:
         if "google.colab" in sys.modules:
             env_mode = "colab"
-        elif "REMOTE_ENV_VAR" in os.environ:
-            env_mode = "remote"
         else:
-            env_mode = "local"
+            env_mode = "local"  # Simplified for clarity
 
+    # Load environment variables from a .env file if it exists
+    # This should be called after setup to ensure dotenv is installed
     setup_environment(env_mode)
-    config = Config(env_mode=env_mode)
+    load_dotenv()
+
+    # --- NEW: Read checkpoint paths from environment variables ---
+    ckpt_16_path_str = os.getenv("CKPT_PATH_EDSR_16")
+    ckpt_8_path_str = os.getenv("CKPT_PATH_EDSR_8")
+
+    # Convert to Path objects if they exist
+    ckpt_16_path = Path(ckpt_16_path_str) if ckpt_16_path_str else None
+    ckpt_8_path = Path(ckpt_8_path_str) if ckpt_8_path_str else None
+
+    config = Config(
+        env_mode=env_mode,
+        model_16_block_ckpt_override=ckpt_16_path,
+        model_8_block_ckpt_override=ckpt_8_path,
+    )
     config.validate()
     return config
-
-
-if __name__ == "__main__":
-    config = create_config()
-    print(f"data root is {config.data_root}")
