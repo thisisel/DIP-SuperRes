@@ -13,7 +13,7 @@ EnvModeType = Literal["colab", "colab-vm", "remote", "local"]
 class Config:
     env_mode: EnvModeType
     selected_subsets: List[str] = field(
-        default_factory=lambda: ["SUDOKU_4", "SUDOKU_5", "SUDOKU_6"]
+        default_factory=lambda: ["SUDOUE-4", "SUDOUE-4", "SUDOUE-4"]
     )
 
     # Derived fields (init=False)
@@ -33,6 +33,7 @@ class Config:
             "local": Path("/mnt/shared"),
             "remote": Path.home(),
             "colab": Path("/content/drive/MyDrive"),
+            "colab-vm": Path("/content/MyDrive"),  # only normalized sets are in vm
         }
         object.__setattr__(
             self, "data_root", data_root_map.get(self.env_mode, Path.cwd())
@@ -46,8 +47,18 @@ class Config:
         #     "taco_file_paths",
         #     [self.taco_raw_dir / f"{subset}.taco" for subset in self.selected_subsets],
         # )
+        normalized_sets_dir_map = {
+            "local": self.base_dir / "normalized_sets",
+            "remote": self.base_dir / "normalized_sets",
+            "colab": self.base_dir / "normalized_sets",
+            "colab-vm": Path("/content/normalized_sets"),
+        }
         object.__setattr__(
-            self, "normalized_sets_dir", self.base_dir / "normalized_sets"
+            self,
+            "normalized_sets_dir",
+            normalized_sets_dir_map.get(
+                self.env_mode, self.base_dir / "normalized_sets"
+            ),
         )
         object.__setattr__(self, "finetune_dir", self.base_dir / "finetune")
         object.__setattr__(self, "train_dir", self.normalized_sets_dir / "train")
@@ -111,6 +122,15 @@ def setup_environment(env_mode: EnvModeType) -> None:
             raise RuntimeError("Google Colab module not found. Are you in Colab?")
         except Exception as e:
             raise RuntimeError(f"Failed to mount Google Drive: {e}")
+
+        try:
+            print("Fetching IP info...")
+            result = subprocess.run(
+                ["curl", "ipinfo.io"], capture_output=True, text=True, check=True
+            )
+            print(f"IP Info: {result.stdout}")
+        except subprocess.CalledProcessError as e:
+            print(f"Warning: Failed to fetch IP info: {e}")
 
         # Optional: Copy data to local /content for faster I/O in Colab
         if env_mode.endswith("vm"):
