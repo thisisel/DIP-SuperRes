@@ -106,7 +106,7 @@ def create_config(env_mode: EnvModeType | None = None) -> Config:
         if "google.colab" in sys.modules:
             env_mode = "colab"
         else:
-            env_mode = "local" 
+            env_mode = "local"
 
     # Load environment variables from a .env file if it exists
     # This should be called after setup to ensure dotenv is installed
