@@ -1,5 +1,7 @@
 ## How to Run the Inference Script
-> prerequisites: Anaconda or Miniconda for local setup
+> **prerequisites:** 
+> * Python package manger: pip or conda
+> * CUDA toolkit
 ### **Step 1:** Download the pre-trained models
 Download the pre-trained models from the top-most `models` directory in the repository.
 Extract them in the directory of your choice. You will use these paths once you reach step 3.
@@ -9,9 +11,23 @@ Navigate to `src/super-res` and open a terminal window or command prompt.
 
 **1. Create**
 ```
+python -m venv venv
+```
+or
+```
 conda env create -f environment.yml
 ```
 **2. Activate**
+```
+# On macOS and Linux:
+source venv/bin/activate
+
+# On Windows (Command Prompt or PowerShell):
+ venv\Scripts\activate
+
+ pip install -r requirements.txt
+```
+or
 ```
 conda activate super_res_inf_env
 ```
