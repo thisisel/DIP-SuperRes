@@ -3,7 +3,7 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Literal, Optional
+from typing import Literal, Optional
 
 try:
     from dotenv import load_dotenv
@@ -68,8 +68,8 @@ class Config:
     def validate(self) -> None:
         """Validate config paths exist; raise errors otherwise."""
         paths_to_check = {
-            "data_root": self.data_root,
-            "base_dir": self.base_dir,
+            # "data_root": self.data_root,
+            # "base_dir": self.base_dir,
             "16-block checkpoint": self.model_16_block_ckpt,
             "8-block checkpoint": self.model_8_block_ckpt,
         }
@@ -106,14 +106,14 @@ def create_config(env_mode: EnvModeType | None = None) -> Config:
         if "google.colab" in sys.modules:
             env_mode = "colab"
         else:
-            env_mode = "local"  # Simplified for clarity
+            env_mode = "local" 
 
     # Load environment variables from a .env file if it exists
     # This should be called after setup to ensure dotenv is installed
     setup_environment(env_mode)
     load_dotenv()
 
-    # --- NEW: Read checkpoint paths from environment variables ---
+    # --- Read checkpoint paths from environment variables ---
     ckpt_16_path_str = os.getenv("CKPT_PATH_EDSR_16")
     ckpt_8_path_str = os.getenv("CKPT_PATH_EDSR_8")
 
