@@ -6,7 +6,7 @@
 Download the pre-trained models from the top-most `models` directory in the repository.
 Extract them in the directory of your choice. You will use these paths once you reach step 3.
 
-### **Step 2:**  Activate conda Environment
+### **Step 2:**  Setup Virtual Environment
 Navigate to `src/super-res` and open a terminal window or command prompt.
 
 **1. Create**
