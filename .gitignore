@@ -10,5 +10,4 @@ wheels/
 .venv
 examples/*
 figures/screenshots/*
-figures/tables/*
 .vscode/DIP-SuperRes.code-workspace
