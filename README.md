@@ -2,12 +2,40 @@
 > **prerequisites:** 
 > * Python package manger: pip or conda
 > * CUDA toolkit
-### **Step 1:** Download the pre-trained models
+### **Step 1:** Clone the repository
 Download the pre-trained models from the top-most `models` directory in the repository.
 Extract them in the directory of your choice. You will use these paths once you reach step 3.
+```
+git clone https://github.com/thisisel/DIP-SuperRes.git
+cd src/super-res/
+```
+**Essential directories and files**
+```
+├── environment.yml --> packages for training and evaluation
+├── figures
+│   ├── evaluation-plot.jpeg
+│   └── tables
+│       ├── 16_block_edsr_train_val_performance.csv
+│       └── 8_block_edsr_train_val_performance.csv
+├── models 
+│   ├── edsr_base_16_block.zip  --> unzip and make note of abs path
+│   └── edsr_base_8_block.zip  --> unzip and make note of abs path
+├── notebooks
+│   ├── data.ipynb
+│   ├── eval.ipynb
+│   ├── finetune.ipynb
+│   ├── shared_config.py
+│   └── train.ipynb
+├── src
+│   └── super-res --> inference root dir
+│       ├── config.py
+│       ├── environment.yml --> packages for inference
+│       ├── inference.py
+│       └── requirements.txt 
+```
 
 ### **Step 2:**  Setup Virtual Environment
-Navigate to `src/super-res` and open a terminal window or command prompt.
+Make sure you are in `src/super-res`
 
 **1. Create**
 ```
@@ -33,7 +61,7 @@ conda activate super_res_inf_env
 ```
 ### **Step 3:** Configuring .env 
 
-Specify the exact paths to the extracted checkpoint files using a `.env` file.
+Specify the exact paths to the extracted checkpoints files using a `.env` file.
 
 **Steps:**
 
@@ -45,6 +73,13 @@ Specify the exact paths to the extracted checkpoint files using a `.env` file.
 
 1.  Make sure `inference.py` , `config.py` and `.env` are in the same directory.
 2.  **Run from your terminal:** Open a terminal or command prompt in that directory.
+
+| Argument       | Type      | Description                                                           | valid inputs               |
+|:---------------|:----------|:----------------------------------------------------------------------|:---------------------------|
+| model-arch     | mandatory | The model architecture to use for inference&nbsp;                     | `EDSR_16`,&nbsp; `EDSR_8`  |
+| input-path     | mandatory | Path or URL to the LR input image                                     |                            |
+| output-dir     | optional  | Directory to save the output image. Defaults to the current directory |                            |
+| env-mode<br> | optional  | Override automatic environment detection                              | `remote`, `local`, `colab` |  
 
 **Example 1: Using the 16-block model on a local file**
 
